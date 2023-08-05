@@ -3,3 +3,5 @@
 - 支持UDP TCP
 - 支持多隧道
 - 基于[openp2p](https://github.com/openp2p-cn/openp2p)
+- 上一个版本（0.4.6）的源码[在这](https://github.com/Guailoudou/programming/tree/main/openp2p-launcher)
+- 前往B站关注我[传送门](https://space.bilibili.com/496960407)

@@ -1,4 +1,4 @@
-﻿#include <iostream>
+#include <iostream>
 #include <fstream>
 #include <sstream>
 #include <iomanip>
@@ -6,7 +6,7 @@
 #include <string>
 #include <cstring>
 #include <random>
-#include "configor/json.hpp"
+#include <nlohmann/json.hpp>
 #include "resource.h"
 #include "releaseHelper.h"
 enum TYPE
@@ -72,6 +72,7 @@ int main()
             system("bin\\openp2p.exe");
             break;
         default:
+            std::cin.ignore(100, '\n');
             std::cout << "错误的指令" << std::endl;
             break;
         }
@@ -83,7 +84,7 @@ int main()
 //生成初始配置
 void sconfig(const std::string& myuuid)
 {
-    configor::json::value j;
+    nlohmann::json j;
     j["LogLevel"] = 1;
     j["network"]["TCPPort"] = 50448;
     j["network"]["UDPPort2"] = 27183;
@@ -91,18 +92,16 @@ void sconfig(const std::string& myuuid)
     j["network"]["ServerPort"] = 27183;
     j["network"]["ServerHost"] = "api.openp2p.cn";
     j["network"]["ShareBandwidth"] = 10;
-    j["network"]["User"] = "Guailoudou";
-    j["network"]["Node"] = myuuid;
-    j["network"]["Token"] = 9222084896127568278;
-    //std::cout << json::wrap(j);
+    j["network"]["User"] = "gldoffice";
+    j["network"]["Node"] = myuuid;  // 替换为你的 myuuid 变量
+    j["network"]["Token"] = 11602319472897248650ULL;
+
     std::ofstream ofs("bin/config.json");
-    ofs << std::setw(4) << configor::json::wrap(j) << std::endl;
+    ofs << std::setw(4) << j << std::endl;
 }
 //添加隧道
 int AddTunnel()
 {
-    configor::json::value array;
-    configor::json::value root;
     std::string Protocol; //隧道类型
     std::string PeerNode; //远程设备名(uuid)
     int DstPort, SrcPort; //远程端口/本地端口
@@ -115,36 +114,42 @@ int AddTunnel()
     }
     catch (...)
     {
+        std::cin.ignore(100, '\n');
         std::cout << "错误的指令" << std::endl;
         return 0;
     }
+    if (!(Protocol == "tcp" || Protocol == "udp")) {
+        std::cin.ignore(100, '\n');
+        std::cout << "错误的指令" << std::endl;
+        return 0;
+    }
+    nlohmann::json j;
     std::ifstream ifs("bin\\config.json");
-    configor::value j;
-    ifs >> configor::json::wrap(j);
+    ifs >> j;
+    ifs.close();
 
+    nlohmann::json opl;
     std::ifstream ifs1("bin\\opl.json");
-    configor::value opl;
-    ifs1 >> configor::json::wrap(opl);
-
+    ifs1 >> opl;
+    ifs1.close();
 
     j["apps"][appn]["AppName"] = "***";
     j["apps"][appn]["Protocol"] = Protocol;
-    j["apps"][appn]["SrcPort"] = SrcPort;//本地端口
-    j["apps"][appn]["PeerNode"] = PeerNode;//远程设备名
-    j["apps"][appn]["DstPort"] = DstPort;//远程端口
+    j["apps"][appn]["SrcPort"] = SrcPort;
+    j["apps"][appn]["PeerNode"] = PeerNode;
+    j["apps"][appn]["DstPort"] = DstPort;
     j["apps"][appn]["DstHost"] = "localhost";
     j["apps"][appn]["PeerUser"] = "";
     j["apps"][appn]["Enabled"] = 1;
-    j["apps"][appn]["AppName"] = "***";
     appn++;
     opl["appn"] = appn;
+
     std::ofstream ofs("bin/config.json");
-    ofs << std::setw(4) << configor::json::wrap(j) << std::endl;
-    std::ofstream ofs1("bin/opl.json");
-    ofs1 << std::setw(4) << configor::json::wrap(opl) << std::endl;
-    ifs.close();
-    ifs1.close();
+    ofs << std::setw(4) << j << std::endl;
     ofs.close();
+
+    std::ofstream ofs1("bin/opl.json");
+    ofs1 << std::setw(4) << opl << std::endl;
     ofs1.close();
     return 1;
 }
@@ -158,31 +163,35 @@ int ClearTunnel()
     }
     catch (...) 
     {
+        std::cin.ignore(100, '\n');
         std::cout << "错误的指令" << std::endl;
         return 0;
     }
     n--;
+    nlohmann::json j;
     std::ifstream ifs("bin\\config.json");
-    configor::value j;
-    ifs >> configor::json::wrap(j);
+    ifs >> j;
+    ifs.close();
+
+    nlohmann::json opl;
     std::ifstream ifs1("bin\\opl.json");
-    configor::value opl;
-    ifs1 >> configor::json::wrap(opl);
-    for (int i = n; i < appn; i++)
-    {
+    ifs1 >> opl;
+    ifs1.close();
+
+    for (int i = n; i < appn; i++) {
         j["apps"][i] = j["apps"][i + 1];
     }
-    j["apps"].erase(appn-1);
-    j["apps"].erase(appn-1);
+    j["apps"].erase(appn - 1);
+    j["apps"].erase(appn - 1);
     appn--;
     opl["appn"] = appn;
+
     std::ofstream ofs("bin/config.json");
-    ofs << std::setw(4) << configor::json::wrap(j) << std::endl;
-    std::ofstream ofs1("bin/opl.json");
-    ofs1 << std::setw(4) << configor::json::wrap(opl) << std::endl;
-    ifs.close();
-    ifs1.close();
+    ofs << std::setw(4) << j << std::endl;
     ofs.close();
+
+    std::ofstream ofs1("bin/opl.json");
+    ofs1 << std::setw(4) << opl << std::endl;
     ofs1.close();
     return 1;
 }
@@ -224,22 +233,24 @@ int Initialization() {
     //生成/获取uuid,app
     if (isFileExists_ifstream(flie))
     {
-        configor::json::value oplr;
+        nlohmann::json oplr;
         std::ifstream ifs("bin\\opl.json");
-        ifs >> configor::json::wrap(oplr);
-        myuuid = (std::string)oplr["uuid"];
-        appn = oplr["appn"];
+        ifs >> oplr;
         ifs.close();
+
+        myuuid = oplr["uuid"];
+        appn = oplr["appn"];
     }
     else
     {
-        configor::json::value opld;
+        nlohmann::json opld;
         myuuid = create_uuid();
         appn = 0;
         opld["uuid"] = myuuid;
         opld["appn"] = appn;
+
         std::ofstream ofs("bin\\opl.json");
-        ofs << std::setw(4) << configor::json::wrap(opld) << std::endl;
+        ofs << std::setw(4) << opld << std::endl;
         ofs.close();
     }
     if (!isFileExists_ifstream(oconig))
@@ -258,7 +269,7 @@ int app()
 {
     CReleaseDLL releasehelper;
     bool blRes;
-    blRes = releasehelper.FreeResFile(IDR_APP1, "APP", "openp2p.exe");
+    blRes = releasehelper.FreeResFile(IDR_APP1, "APP"， "openp2p.exe");
 
     if (blRes)
     {
@@ -278,14 +289,15 @@ void ReadApp(const int& n)
     {
         for (int i = 0; i < n; i++)
         {
+            nlohmann::json j;
             std::ifstream ifs("bin\\config.json");
-            configor::value j;
-            ifs >> configor::json::wrap(j);
-            std::cout << "\033[32;1m*******隧道序号：" << i+1 << "*******\033[0m" << std::endl;
-            std::cout << "类型:" << (std::string)j["apps"][i]["Protocol"] << std::endl;
-            std::cout << "对方uuid:" << (std::string)j["apps"][i]["PeerNode"] << std::endl;
-            std::cout << "对方端口:" << (int)j["apps"][i]["DstPort"] << std::endl;
-            std::cout << "本地端口:" << (int)j["apps"][i]["SrcPort"] << std::endl;
+            ifs >> j;
+            ifs.close();
+            std::cout << "\033[32;1m*******隧道序号：" << i + 1 << "*******\033[0m" << std::endl;
+            std::cout << "类型:" << j["apps"][i]["Protocol"]。get<std::string>() << std::endl;
+            std::cout << "对方uuid:" << j["apps"][i]["PeerNode"]。get<std::string>() << std::endl;
+            std::cout << "对方端口:" << j["apps"][i]["DstPort"]。get<int>() << std::endl;
+            std::cout << "本地端口:" << j["apps"][i]["SrcPort"]。get<int>() << std::endl;
         }
         std::cout << "\033[32;1m***************************\033[0m" << std::endl;
     }

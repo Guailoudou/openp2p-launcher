@@ -4,7 +4,6 @@
 #include <iomanip>
 #include <chrono>
 #include <string>
-#include <cstring>
 #include <random>
 #include <nlohmann/json.hpp>
 #include "resource.h"
@@ -28,8 +27,9 @@ int appn;
 int main()
 {
     //初始化
+    std::string v = "0.6.2";
     if (Initialization()) {
-        std::cout << "*初始化完毕*\n*********************************************\n     Openp2pLauncher0.6.1\n     -被连接需要把你的uuid和端口发给对方\n     -本程序基于openp2p\n*********************************************\n" << std::endl;
+        std::cout << "*初始化完毕*\n*********************************************\n     Openp2pLauncher" << v << "\n     -被连接需要把你的uuid和端口发给对方\n     -本程序基于openp2p\n*********************************************\n" << std::endl;
         system("title openp2p-launcher-by-Guailoudou");
     }
     std::string types;
@@ -135,9 +135,9 @@ int AddTunnel()
 
     j["apps"][appn]["AppName"] = "***";
     j["apps"][appn]["Protocol"] = Protocol;
-    j["apps"][appn]["SrcPort"] = SrcPort;
-    j["apps"][appn]["PeerNode"] = PeerNode;
-    j["apps"][appn]["DstPort"] = DstPort;
+    j["apps"][appn]["SrcPort"] = SrcPort;//本地端口
+    j["apps"][appn]["PeerNode"] = PeerNode;//远程设备名
+    j["apps"][appn]["DstPort"] = DstPort;//远程端口
     j["apps"][appn]["DstHost"] = "localhost";
     j["apps"][appn]["PeerUser"] = "";
     j["apps"][appn]["Enabled"] = 1;

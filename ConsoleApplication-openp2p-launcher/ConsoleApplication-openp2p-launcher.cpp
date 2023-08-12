@@ -5,214 +5,28 @@
 #include <chrono>
 #include <string>
 #include <random>
+#include <windows.h>
+#pragma comment(lib, "wsock32.lib")
 #include <nlohmann/json.hpp>
+#include <io.h>
+#include <process.h>
+#include <thread>
 #include "resource.h"
 #include "releaseHelper.h"
-enum TYPE
-{
-    add=1, //添加隧道
-    del,   //删除隧道
-    list,  //查看隧道列表
-    start, //启动
-};
-//声明函数.
-bool isFileExists_ifstream(std::string& name);
-void ReadApp(const int& n), sconfig(const std::string& myuuid); 
-int AddTunnel(), ClearTunnel();
-enum TYPE type(const std::string& type);
-int app(),Initialization();
-std::string create_uuid();
-std::string myuuid;
-int appn;
+int DstPort;
 int main()
 {
-    //初始化
-    std::string v = "0.6.2";
-    if (Initialization()) {
-        std::cout << "*初始化完毕*\n*********************************************\n     Openp2pLauncher" << v << "\n     -被连接需要把你的uuid和端口发给对方\n     -本程序基于openp2p\n*********************************************\n" << std::endl;
-        system("title openp2p-launcher-by-Guailoudou");
-    }
-    std::string types;
-    while (true)
-    {
-        std::cout << "注意你的uuid是：\033[31;1m" << myuuid << "\033[0m\n\033[34;1m******指令语法******\n添加隧道：add <tcp/udp> <uuid> <对方端口> <本地接收端口>\n删除隧道：del <序号>\n隧道列表：list\n开始运行隧道/程序：start\n*******************\033[0m" << std::endl;
-        std::cin >> types;
-        system("cls");
-        std::cout << types << std::endl;
-        enum TYPE Etypes = type(types);
-        switch (Etypes)
-        {
-        case add:
-            if (AddTunnel())
-            {
-                std::cout << "新建隧道成功" << std::endl;
-                ReadApp(appn);
-            }
-            else
-            {
-                std::cout << "新建隧道失败" << std::endl;
-            }
-            break;
-        case del:
-            if (ClearTunnel())
-            {
-                std::cout << "删除隧道成功" << std::endl;
-                ReadApp(appn);
-            }
-            else
-            {
-                std::cout << "删除隧道失败" << std::endl;
-            }
-            break;
-        case list:
-            ReadApp(appn);
-            break;
-        case start:
-            std::cout << "注意你的uuid是：\033[31;1m" << myuuid << "\033[0m" << std::endl;
-            system("bin\\openp2p.exe");
-            break;
-        default:
-            std::cin.ignore(100, '\n');
-            std::cout << "错误的指令" << std::endl;
-            break;
-        }
-
-    }
-    return 0;
-}
-////////////////////////////////////////////////////////////////////////////
-//生成初始配置
-void sconfig(const std::string& myuuid)
-{
-    nlohmann::json j;
-    j["LogLevel"] = 1;
-    j["network"]["TCPPort"] = 50448;
-    j["network"]["UDPPort2"] = 27183;
-    j["network"]["UDPPort1"] = 27182;
-    j["network"]["ServerPort"] = 27183;
-    j["network"]["ServerHost"] = "api.openp2p.cn";
-    j["network"]["ShareBandwidth"] = 10;
-    j["network"]["User"] = "gldoffice";
-    j["network"]["Node"] = myuuid;  // 替换为你的 myuuid 变量
-    j["network"]["Token"] = 11602319472897248650ULL;
-
-    std::ofstream ofs("bin/config.json");
-    ofs << std::setw(4) << j << std::endl;
-}
-//添加隧道
-int AddTunnel()
-{
-    std::string Protocol; //隧道类型
-    std::string PeerNode; //远程设备名(uuid)
-    int DstPort, SrcPort; //远程端口/本地端口
-    try 
-    {
-        std::cin >> Protocol;
-        std::cin >> PeerNode;
-        std::cin >> DstPort;
-        std::cin >> SrcPort;
-    }
-    catch (...)
-    {
-        std::cin.ignore(100, '\n');
-        std::cout << "错误的指令" << std::endl;
-        return 0;
-    }
-    if (!(Protocol == "tcp" || Protocol == "udp")) {
-        std::cin.ignore(100, '\n');
-        std::cout << "错误的指令" << std::endl;
-        return 0;
-    }
-    nlohmann::json j;
-    std::ifstream ifs("bin\\config.json");
-    ifs >> j;
-    ifs.close();
-
-    nlohmann::json opl;
-    std::ifstream ifs1("bin\\opl.json");
-    ifs1 >> opl;
-    ifs1.close();
-
-    j["apps"][appn]["AppName"] = "***";
-    j["apps"][appn]["Protocol"] = Protocol;
-    j["apps"][appn]["SrcPort"] = SrcPort;//本地端口
-    j["apps"][appn]["PeerNode"] = PeerNode;//远程设备名
-    j["apps"][appn]["DstPort"] = DstPort;//远程端口
-    j["apps"][appn]["DstHost"] = "localhost";
-    j["apps"][appn]["PeerUser"] = "";
-    j["apps"][appn]["Enabled"] = 1;
-    appn++;
-    opl["appn"] = appn;
-
-    std::ofstream ofs("bin/config.json");
-    ofs << std::setw(4) << j << std::endl;
-    ofs.close();
-
-    std::ofstream ofs1("bin/opl.json");
-    ofs1 << std::setw(4) << opl << std::endl;
-    ofs1.close();
-    return 1;
-}
-//删除隧道
-int ClearTunnel()
-{
-    int n;
-    try
-    {
-        std::cin >> n;
-    }
-    catch (...) 
-    {
-        std::cin.ignore(100, '\n');
-        std::cout << "错误的指令" << std::endl;
-        return 0;
-    }
-    n--;
-    nlohmann::json j;
-    std::ifstream ifs("bin\\config.json");
-    ifs >> j;
-    ifs.close();
-
-    nlohmann::json opl;
-    std::ifstream ifs1("bin\\opl.json");
-    ifs1 >> opl;
-    ifs1.close();
-
-    for (int i = n; i < appn; i++) {
-        j["apps"][i] = j["apps"][i + 1];
-    }
-    j["apps"].erase(appn - 1);
-    j["apps"].erase(appn - 1);
-    appn--;
-    opl["appn"] = appn;
-
-    std::ofstream ofs("bin/config.json");
-    ofs << std::setw(4) << j << std::endl;
-    ofs.close();
-
-    std::ofstream ofs1("bin/opl.json");
-    ofs1 << std::setw(4) << opl << std::endl;
-    ofs1.close();
-    return 1;
-}
-//生成uuid
-std::string create_uuid()
-{
-    std::stringstream stream;
-    auto random_seed = std::chrono::system_clock::now().time_since_epoch().count();
-    std::mt19937 seed_engine(random_seed);
-    std::uniform_int_distribution<std::size_t> random_gen;
-    std::size_t value = random_gen(seed_engine);
-    stream << std::hex << value;
-
-    return stream.str();
-}
-//初始化
-int Initialization() {
-    //文件路径
-    std::string flie = "bin\\opl.json";
+    //声明函数.
+    bool isFileExists_ifstream(std::string & name);
+    void play0(std::string myuuid), play1(int SrcPort,  std::string uuid, std::string myuuid), openp2p();
+    int app(),UDPMC();
+    std::string create_uuid();
+    //声明变量
+    int type, SrcPort;
+    std::string uuid, myuuid;
+    //system("pause");
+    std::string flie = "bin\\uuid.dat";
     std::string apps = "bin\\openp2p.exe";
-    std::string oconig = "bin\\config.json";
     std::string log = "bin\\bin\\log\\openp2p.log";
     std::string log0 = "bin\\log\\openp2p.log";
     //释放openp2p文件
@@ -230,34 +44,126 @@ int Initialization() {
         system("del bin\\log /q");
         std::cout << "检查到你自己打开了bin里面的openp2p.exe，最好不要直接打开bin启动里面的文件哦\n" << std::endl;
     }
-    //生成/获取uuid,app
+    //生成/获取uuid
     if (isFileExists_ifstream(flie))
     {
-        nlohmann::json oplr;
-        std::ifstream ifs("bin\\opl.json");
-        ifs >> oplr;
-        ifs.close();
-
-        myuuid = oplr["uuid"];
-        appn = oplr["appn"];
+        std::ifstream infile;
+        infile.open("bin\\uuid.dat");
+        infile >> myuuid;
+        infile.close();
     }
     else
     {
-        nlohmann::json opld;
         myuuid = create_uuid();
-        appn = 0;
-        opld["uuid"] = myuuid;
-        opld["appn"] = appn;
-
-        std::ofstream ofs("bin\\opl.json");
-        ofs << std::setw(4) << opld << std::endl;
-        ofs.close();
+        std::ofstream outfile;
+        outfile.open("bin\\uuid.dat");
+        outfile << myuuid << std::endl;
+        outfile.close();
     }
-    if (!isFileExists_ifstream(oconig))
+    std::cout << "*初始化完毕*\n*********************************************\n                使用说明\n    1.根据提示输入参数\n    2.注意你的uuid是：" << myuuid << "\n    4.被连接需要把你的uuid和端口发给对方\n    3.本程序基于openp2p\n*********************************************\n" << std::endl;
+    system("title openp2p-launcher-by-Guailoudou");
+    std::cout << "被连接：输入0||连接：输入1，以上一次的连接方式连接输入2 " << std::endl;
+    std::cin >> type;
+    if (type == 0)
     {
-        sconfig(myuuid);
+        play0(myuuid);
+        system("bin\\openp2p.exe");
     }
-    return 1;
+    else if (type == 1)
+    {
+        std::cout << "开始运行之后直接打开游戏从局域网进入\n请输入对方uuid：" << std::endl;
+        std::cin >> uuid;
+        std::cout << "请输入对方端口：" << std::endl;
+        std::cin >> DstPort;
+        SrcPort = DstPort;
+        std::cout << "程序2s后开始运行,请直接打开游戏从局域网进入";
+        Sleep(2000);
+        play1(SrcPort, uuid, myuuid);
+        std::thread t1(openp2p);
+        std::thread t2(UDPMC);
+        t1.join();
+    }
+    else if (type == 2)
+    {
+        nlohmann::json op;
+        std::ifstream ifs2("bin\\config.json");
+        ifs2 >> op;
+        ifs2.close();
+        DstPort = op["apps"][0]["SrcPort"];
+        std::thread t1(openp2p);
+        std::thread t2(UDPMC);
+        t1.join();
+    }
+    else
+    {
+        std::cout << "输入错误" << std::endl;
+    }
+    system("pause");
+    return 0;
+}
+void openp2p() {
+    system("bin\\openp2p.exe");
+}
+////////////////////////////////////////////////////////////////////////////
+//生成仅供连接配置
+void play0(std::string myuuid)
+{
+    nlohmann::json j;
+    j["network"]["Token"] = 11602319472897248650ULL;
+    j["network"]["Node"] = myuuid;
+    j["network"]["User"] = "gldoffice";
+    j["network"]["ShareBandwidth"] = 100;
+    j["network"]["ServerHost"] = "api.openp2p.cn";
+    j["network"]["ServerPort"] = 27183;
+    j["network"]["UDPPort1"] = 27182;
+    j["network"]["UDPPort2"] = 27183;
+    j["network"]["TCPPort"] = 50448;
+    j["LogLevel"] = 1;
+    //std::cout << json::wrap(j);
+    std::ofstream ofs("bin/config.json");
+    ofs << std::setw(4) << j << std::endl;
+}
+//生成tcp-app配置
+void play1(int SrcPort, std::string uuid, std::string myuuid)
+{
+    nlohmann::json array;
+    nlohmann::json root;
+    nlohmann::json j;
+    j["network"]["Token"] = 11602319472897248650ULL;
+    j["network"]["Node"] = myuuid;
+    j["network"]["User"] = "gldoffice";
+    j["network"]["ShareBandwidth"] = 100;
+    j["network"]["ServerHost"] = "api.openp2p.cn";
+    j["network"]["ServerPort"] = 27183;
+    j["network"]["UDPPort1"] = 27182;
+    j["network"]["UDPPort2"] = 27183;
+    j["network"]["TCPPort"] = 50448;
+
+    j["apps"][0]["AppName"] = "***";
+    j["apps"][0]["Protocol"] = "tcp";
+    j["apps"][0]["SrcPort"] = SrcPort;//本地端口
+    j["apps"][0]["PeerNode"] = uuid;//远程设备名
+    j["apps"][0]["DstPort"] = DstPort;//远程端口
+    j["apps"][0]["DstHost"] = "localhost";
+    j["apps"][0]["PeerUser"] = "";
+    j["apps"][0]["Enabled"] = 1;
+    j["apps"][0]["AppName"] = "***";
+    j["LogLevel"] = 1;
+    //std::cout << configor::json::wrap(j);
+    std::ofstream ofs("bin/config.json");
+    ofs << std::setw(4) << j << std::endl;
+}
+//生成uuid
+std::string create_uuid()
+{
+    std::stringstream stream;
+    auto random_seed = std::chrono::system_clock::now().time_since_epoch().count();
+    std::mt19937 seed_engine(random_seed);
+    std::uniform_int_distribution<std::size_t> random_gen;
+    std::size_t value = random_gen(seed_engine);
+    stream << std::hex << value;
+
+    return stream.str();
 }
 //判断文件存在
 bool isFileExists_ifstream(std::string& name) {
@@ -269,7 +175,7 @@ int app()
 {
     CReleaseDLL releasehelper;
     bool blRes;
-    blRes = releasehelper.FreeResFile(IDR_APP1, "APP"， "openp2p.exe");
+    blRes = releasehelper.FreeResFile(IDR_APP1, "APP", "openp2p.exe");
 
     if (blRes)
     {
@@ -283,35 +189,51 @@ int app()
     }
     return 0;
 }
-void ReadApp(const int& n)
+int UDPMC()
 {
-    if (n != 0)
-    {
-        for (int i = 0; i < n; i++)
-        {
-            nlohmann::json j;
-            std::ifstream ifs("bin\\config.json");
-            ifs >> j;
-            ifs.close();
-            std::cout << "\033[32;1m*******隧道序号：" << i + 1 << "*******\033[0m" << std::endl;
-            std::cout << "类型:" << j["apps"][i]["Protocol"]。get<std::string>() << std::endl;
-            std::cout << "对方uuid:" << j["apps"][i]["PeerNode"]。get<std::string>() << std::endl;
-            std::cout << "对方端口:" << j["apps"][i]["DstPort"]。get<int>() << std::endl;
-            std::cout << "本地端口:" << j["apps"][i]["SrcPort"]。get<int>() << std::endl;
+    if (DstPort != 0) {
+        // 初始化 Winsock
+        WSADATA wsaData;
+        if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
+            std::cerr << "Failed to initialize Winsock." << std::endl;
+            return 1;
         }
-        std::cout << "\033[32;1m***************************\033[0m" << std::endl;
-    }
-    else
-    {
-        std::cout << "无隧道" << std::endl;
-    }
 
-}
-enum TYPE type(const std::string& type)
-{
-    enum TYPE;
-    if (type == "add")return add;
-    if (type == "del")return del;
-    if (type == "list")return list;
-    if (type == "start")return start;
+        const char* MULTICAST_GROUP = "224.0.2.60";
+        const int MULTICAST_PORT = 4445;
+
+        int sock = socket(AF_INET, SOCK_DGRAM, 0);
+        if (sock == -1) {
+            std::cerr << "Socket creation error: " << WSAGetLastError() << std::endl;
+            WSACleanup(); // 清理 Winsock 资源
+            return 1;
+        }
+
+        int ttl = 2; // Time-to-live for multicast
+        setsockopt(sock, IPPROTO_IP, IP_MULTICAST_TTL, (const char*)&ttl, sizeof(ttl));
+
+        struct sockaddr_in addr {};
+        memset(&addr, 0, sizeof(addr));
+        addr.sin_family = AF_INET;
+        addr.sin_addr.s_addr = inet_addr(MULTICAST_GROUP);
+        addr.sin_port = htons(MULTICAST_PORT);
+
+
+        while (true) {
+            // 使用 std::ostringstream 进行转换和编码
+            std::ostringstream ss;
+            ss << "[MOTD][OPL]remote server[/MOTD][AD]" << DstPort << "[/AD]";
+            std::string message = ss.str();
+
+            sendto(sock, message.c_str(), message.length(), 0, (struct sockaddr*)&addr, sizeof(addr));
+            //std::cout << "Sent: " << message << std::endl;
+            Sleep(1500); // Sleep for a while before sending the next message
+        }
+
+        closesocket(sock);
+
+        // 清理 Winsock 资源
+        WSACleanup();
+    }
+    return 0;
 }

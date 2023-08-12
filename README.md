@@ -1,4 +1,4 @@
-# openp2p-launcher
+# openp2p-launcher0.6
 - 可以快捷建立p2p连接
 - 支持UDP TCP
 - 支持多隧道

@@ -3,6 +3,7 @@
 - MC专用
 - 直接在局域网显示世界
 - 离线可直接连接
+- 连接状态监测
 - 基于[openp2p](https://github.com/openp2p-cn/openp2p)
 - 0.6的源码[在这](https://github.com/Guailoudou/openp2p-launcher/tree/main)
 - 问题反馈qq群：`873968900`

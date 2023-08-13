@@ -2,22 +2,32 @@
 #include <fstream>
 #include <sstream>
 #include <iomanip>
+#ifndef _WIN32_WINNT
+//#define _WIN32_WINNT 0x0600 // 根据需要设置合适的版本
+#endif
+
+#define _WINSOCK_DEPRECATED_NO_WARNINGS
+#define WIN32_LEAN_AND_MEAN
 #include <chrono>
 #include <string>
 #include <random>
 #include <windows.h>
 #pragma comment(lib, "wsock32.lib")
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#pragma comment(lib, "ws2_32.lib")
 #include <nlohmann/json.hpp>
 #include <io.h>
 #include <process.h>
 #include <thread>
 #include "resource.h"
 #include "releaseHelper.h"
-int DstPort;
+
+int DstPort,openn=0;
 int main()
 {
     //声明函数.
-    bool isFileExists_ifstream(std::string & name);
+    bool isFileExists_ifstream(std::string & name),checkMCServerOnline(const char* serverIP, int serverPort);
     void play0(std::string myuuid), play1(int SrcPort,  std::string uuid, std::string myuuid), openp2p();
     int app(),UDPMC();
     std::string create_uuid();
@@ -29,6 +39,7 @@ int main()
     std::string apps = "bin\\openp2p.exe";
     std::string log = "bin\\bin\\log\\openp2p.log";
     std::string log0 = "bin\\log\\openp2p.log";
+    std::string oconig = "bin\\config.json";
     //释放openp2p文件
     if (!isFileExists_ifstream(apps))
     {
@@ -47,10 +58,21 @@ int main()
     //生成/获取uuid
     if (isFileExists_ifstream(flie))
     {
-        std::ifstream infile;
-        infile.open("bin\\uuid.dat");
-        infile >> myuuid;
-        infile.close();
+        if(isFileExists_ifstream(oconig))
+        {
+            nlohmann::json op;
+            std::ifstream ifs2("bin\\config.json");
+            ifs2 >> op;
+            ifs2.close();
+            myuuid = op["network"]["Node"];
+        }
+        else
+        {
+            std::ifstream infile;
+            infile.open("bin\\uuid.dat");
+            infile >> myuuid;
+            infile.close();
+        }
     }
     else
     {
@@ -60,14 +82,22 @@ int main()
         outfile << myuuid << std::endl;
         outfile.close();
     }
-    std::cout << "*初始化完毕*\n*********************************************\n                使用说明\n    1.根据提示输入参数\n    2.注意你的uuid是：" << myuuid << "\n    4.被连接需要把你的uuid和端口发给对方\n    3.本程序基于openp2p\n*********************************************\n" << std::endl;
+    std::cout << "*初始化完毕*\n***************OPL-0.5.3**********************\n                使用说明\n    1.根据提示输入参数\n    2.注意你的uuid是：" << myuuid << "\n    4.被连接需要把你的uuid和端口发给对方\n    3.本程序基于openp2p\n*********************************************\n" << std::endl;
     system("title openp2p-launcher-by-Guailoudou");
     std::cout << "被连接：输入0||连接：输入1，以上一次的连接方式连接输入2 " << std::endl;
     std::cin >> type;
     if (type == 0)
     {
         play0(myuuid);
-        system("bin\\openp2p.exe");
+        std::thread t1(openp2p);
+        Sleep(2000);
+        nlohmann::json op2;
+        std::ifstream ifs3("bin\\config.json");
+        ifs3 >> op2;
+        ifs3.close();
+        myuuid = op2["network"]["Node"];
+        std::cout << "\033[31;1m(以这个为准)你的UUID为:" << myuuid << "\033[0m" <<std::endl;
+        t1.join();
     }
     else if (type == 1)
     {
@@ -80,8 +110,39 @@ int main()
         Sleep(2000);
         play1(SrcPort, uuid, myuuid);
         std::thread t1(openp2p);
-        std::thread t2(UDPMC);
+        std::thread UDP(UDPMC);
+        Sleep(2000);
+        nlohmann::json op2;
+        std::ifstream ifs22("bin\\config.json");
+        ifs22 >> op2;
+        ifs22.close();
+        myuuid = op2["network"]["Node"];
+        std::cout << "(以这个为准)你的UUID为:" << myuuid <<std::endl;
+        const char* serverIP = "127.0.0.1";
+        while (true)
+        {
+            if (checkMCServerOnline(serverIP, DstPort)) {
+                if (openn == 0) { 
+                    std::cout << "\033[32;1m连接成功,请直接打开游戏从局域网进入\033[0m" << std::endl;
+                    openn = 1;
+                    
+                }
+                std::cout << "\033[32;1m连接正常\033[0m  " ;
+                Sleep(5000);
+            }
+            else
+            {
+                if (openn == 1) {
+                    std::cout << "\033[31;1m检测到异常断开连接，开始尝试重新连接\033[0m" << std::endl;
+                    openn = 0;
+                }
+                Sleep(2000);
+            }
+        }
+        std::cout << "\033[32;1m跳出while了\033[0m";
         t1.join();
+        UDP.join();
+        
     }
     else if (type == 2)
     {
@@ -91,8 +152,36 @@ int main()
         ifs2.close();
         DstPort = op["apps"][0]["SrcPort"];
         std::thread t1(openp2p);
-        std::thread t2(UDPMC);
+        std::thread UDP(UDPMC);
+        Sleep(2000);
+        nlohmann::json op2;
+        std::ifstream ifs3("bin\\config.json");
+        ifs3 >> op2;
+        ifs3.close();
+        myuuid = op2["network"]["Node"];
+        std::cout << "(以这个为准)你的UUID为:" << myuuid << std::endl;
+        const char* serverIP = "127.0.0.1";
+        while (true)
+        {
+            if (checkMCServerOnline(serverIP, DstPort)) {
+                if (openn == 0) {
+                    std::cout << "\033[32;1m连接成功,请直接打开游戏从局域网进入\033[0m" << std::endl;
+                    openn = 1;
+                }
+                std::cout << "\033[32;1m连接正常\033[0m  ";
+                Sleep(5000);
+            }
+            else
+            {
+                if (openn == 1) {
+                    std::cout << "\033[32;1m检测到异常断开连接，开始尝试重新连接\033[0m" << std::endl;
+                    openn = 0;
+                }
+                Sleep(2000);
+            }
+        }
         t1.join();
+        UDP.join();
     }
     else
     {
@@ -236,4 +325,41 @@ int UDPMC()
         WSACleanup();
     }
     return 0;
+}
+bool checkMCServerOnline(const char* serverIP, int serverPort) {
+    WSADATA wsaData;
+    if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
+        std::cerr << "WSAStartup failed" << std::endl;
+        return false;
+    }
+
+    SOCKET sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    if (sock == INVALID_SOCKET) {
+        std::cerr << "Socket creation error: " << WSAGetLastError() << std::endl;
+        WSACleanup();
+        return false;
+    }
+
+    sockaddr_in serverAddress;
+    serverAddress.sin_family = AF_INET;
+    serverAddress.sin_port = htons(serverPort);
+
+    // 使用 inet_pton 函数将 IP 地址从字符串转换为二进制格式
+    if (inet_pton(AF_INET, serverIP, &serverAddress.sin_addr) <= 0) {
+        std::cerr << "Invalid address" << std::endl;
+        closesocket(sock);
+        WSACleanup();
+        return false;
+    }
+
+    if (connect(sock, (struct sockaddr*)&serverAddress, sizeof(serverAddress)) != 0) {
+        std::cerr << "Server not online" << std::endl;
+        closesocket(sock);
+        WSACleanup();
+        return false;
+    }
+
+    closesocket(sock);
+    WSACleanup();
+    return true;
 }

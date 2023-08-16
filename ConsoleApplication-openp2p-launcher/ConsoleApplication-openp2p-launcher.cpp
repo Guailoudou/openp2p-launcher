@@ -106,6 +106,16 @@ int main()
         std::cout << "请输入对方端口：" << std::endl;
         std::cin >> DstPort;
         SrcPort = DstPort;
+        while (true)
+        {
+            if (checkMCServerOnline(serverIP, SrcPort)) {
+                SrcPort = DstPort - 1;
+            }
+            else
+            {
+                break;
+            }
+        }
         std::cout << "程序2s后开始运行,请直接打开游戏从局域网进入";
         Sleep(2000);
         play1(SrcPort, uuid, myuuid);

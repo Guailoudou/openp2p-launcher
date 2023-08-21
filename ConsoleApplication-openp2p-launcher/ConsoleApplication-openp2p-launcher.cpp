@@ -1,4 +1,4 @@
-#include <iostream>
+﻿#include <iostream>
 #include <fstream>
 #include <sstream>
 #include <iomanip>
@@ -23,7 +23,7 @@
 #include "resource.h"
 #include "releaseHelper.h"
 
-int DstPort,openn=0;
+int SrcPort,openn=0;
 int main()
 {
     //声明函数.
@@ -32,7 +32,7 @@ int main()
     int app(),UDPMC();
     std::string create_uuid();
     //声明变量
-    int type, SrcPort;
+    int type, DstPort;
     std::string uuid, myuuid;
     //system("pause");
     std::string flie = "bin\\uuid.dat";
@@ -96,11 +96,15 @@ int main()
         ifs3 >> op2;
         ifs3.close();
         myuuid = op2["network"]["Node"];
-        std::cout << "\033[31;1m(以这个为准)你的UUID为:" << myuuid << "\033[0m" <<std::endl;
+        std::ostringstream ss;
+        ss << "\033[31;1m(以这个为准)你的UUID为:" << myuuid << "\033[0m";
+        std::string message = ss.str();
+        std::cout << message << std::endl;
         t1.join();
     }
     else if (type == 1)
     {
+        const char* serverIP = "127.0.0.1";
         std::cout << "开始运行之后直接打开游戏从局域网进入\n请输入对方uuid：" << std::endl;
         std::cin >> uuid;
         std::cout << "请输入对方端口：" << std::endl;
@@ -116,9 +120,9 @@ int main()
                 break;
             }
         }
-        std::cout << "程序2s后开始运行,请直接打开游戏从局域网进入";
+        std::cout << "程序2s后开始运行,请直接打开游戏等待提示连接成功后从局域网进入";
         Sleep(2000);
-        play1(SrcPort, uuid, myuuid);
+        play1(DstPort, uuid, myuuid);
         std::thread t1(openp2p);
         std::thread UDP(UDPMC);
         Sleep(2000);
@@ -127,11 +131,14 @@ int main()
         ifs22 >> op2;
         ifs22.close();
         myuuid = op2["network"]["Node"];
-        std::cout << "(以这个为准)你的UUID为:" << myuuid <<std::endl;
-        const char* serverIP = "127.0.0.1";
+        std::ostringstream ss;
+        ss << "\033[31;1m(以这个为准)你的UUID为:" << myuuid << "\033[0m";
+        std::string message = ss.str();
+        std::cout << message << std::endl;
+
         while (true)
         {
-            if (checkMCServerOnline(serverIP, DstPort)) {
+            if (checkMCServerOnline(serverIP, SrcPort)) {
                 if (openn == 0) { 
                     std::cout << "\033[32;1m连接成功,请直接打开游戏从局域网进入\033[0m" << std::endl;
                     openn = 1;
@@ -160,7 +167,7 @@ int main()
         std::ifstream ifs2("bin\\config.json");
         ifs2 >> op;
         ifs2.close();
-        DstPort = op["apps"][0]["SrcPort"];
+        SrcPort = op["apps"][0]["SrcPort"];
         std::thread t1(openp2p);
         std::thread UDP(UDPMC);
         Sleep(2000);
@@ -169,11 +176,14 @@ int main()
         ifs3 >> op2;
         ifs3.close();
         myuuid = op2["network"]["Node"];
-        std::cout << "(以这个为准)你的UUID为:" << myuuid << std::endl;
+        std::ostringstream ss;
+        ss << "\033[31;1m(以这个为准)你的UUID为:" << myuuid << "\033[0m";
+        std::string message = ss.str();
+        std::cout << message << std::endl;
         const char* serverIP = "127.0.0.1";
         while (true)
         {
-            if (checkMCServerOnline(serverIP, DstPort)) {
+            if (checkMCServerOnline(serverIP, SrcPort)) {
                 if (openn == 0) {
                     std::cout << "\033[32;1m连接成功,请直接打开游戏从局域网进入\033[0m" << std::endl;
                     openn = 1;
@@ -223,10 +233,8 @@ void play0(std::string myuuid)
     ofs << std::setw(4) << j << std::endl;
 }
 //生成tcp-app配置
-void play1(int SrcPort, std::string uuid, std::string myuuid)
+void play1(int DstPort, std::string uuid, std::string myuuid)
 {
-    nlohmann::json array;
-    nlohmann::json root;
     nlohmann::json j;
     j["network"]["Token"] = 11602319472897248650ULL;
     j["network"]["Node"] = myuuid;
@@ -290,7 +298,7 @@ int app()
 }
 int UDPMC()
 {
-    if (DstPort != 0) {
+    if (SrcPort != 0) {
         // 初始化 Winsock
         WSADATA wsaData;
         if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
@@ -321,7 +329,7 @@ int UDPMC()
         while (true) {
             // 使用 std::ostringstream 进行转换和编码
             std::ostringstream ss;
-            ss << "[MOTD][OPL]remote server[/MOTD][AD]" << DstPort << "[/AD]";
+            ss << u8"[MOTD]§2§l[OPL]§b远程世界 §7-by GLD[/MOTD][AD]" << SrcPort << "[/AD]";
             std::string message = ss.str();
 
             sendto(sock, message.c_str(), message.length(), 0, (struct sockaddr*)&addr, sizeof(addr));

@@ -1,4 +1,4 @@
-﻿#include <iostream>
+#include <iostream>
 #include <fstream>
 #include <sstream>
 #include <iomanip>
@@ -22,13 +22,12 @@
 #include <thread>
 #include "resource.h"
 #include "releaseHelper.h"
-
-int SrcPort,openn=0;
+int SrcPort,openn=0,udpopen;
 int main()
 {
     //声明函数.
     bool isFileExists_ifstream(std::string & name),checkMCServerOnline(const char* serverIP, int serverPort);
-    void play0(std::string myuuid), play1(int SrcPort,  std::string uuid, std::string myuuid), openp2p();
+    void play0(std::string myuuid), play1(int SrcPort,  std::string uuid, std::string myuuid), openp2p(), heart(),seeduuid();
     int app(),UDPMC();
     std::string create_uuid();
     //声明变量
@@ -82,7 +81,7 @@ int main()
         outfile << myuuid << std::endl;
         outfile.close();
     }
-    std::cout << "*初始化完毕*\n***************OPL-0.5.3**********************\n                使用说明\n    1.根据提示输入参数\n    2.注意你的uuid是：" << myuuid << "\n    4.被连接需要把你的uuid和端口发给对方\n    3.本程序基于openp2p\n*********************************************\n" << std::endl;
+    std::cout << "*初始化完毕*\n***************OPL-0.5.5**********************\n                使用说明\n    1.根据提示输入参数\n    2.注意你的uuid是：" << myuuid << "\n    4.被连接需要把你的uuid和端口发给对方\n    3.程序文档：https://gld.rth1.link/md/opl\n    4.本程序基于openp2p\n*********************************************\n" << std::endl;
     system("title openp2p-launcher-by-Guailoudou");
     std::cout << "被连接：输入0||连接：输入1，以上一次的连接方式连接输入2 " << std::endl;
     std::cin >> type;
@@ -124,41 +123,13 @@ int main()
         Sleep(2000);
         play1(DstPort, uuid, myuuid);
         std::thread t1(openp2p);
-        std::thread UDP(UDPMC);
+        std::thread hea(heart);
+        std::thread udp(UDPMC);
         Sleep(2000);
-        nlohmann::json op2;
-        std::ifstream ifs22("bin\\config.json");
-        ifs22 >> op2;
-        ifs22.close();
-        myuuid = op2["network"]["Node"];
-        std::ostringstream ss;
-        ss << "\033[31;1m(以这个为准)你的UUID为:" << myuuid << "\033[0m";
-        std::string message = ss.str();
-        std::cout << message << std::endl;
-
-        while (true)
-        {
-            if (checkMCServerOnline(serverIP, SrcPort)) {
-                if (openn == 0) { 
-                    std::cout << "\033[32;1m连接成功,请直接打开游戏从局域网进入\033[0m" << std::endl;
-                    openn = 1;
-                    
-                }
-                std::cout << "\033[32;1m连接正常\033[0m  " ;
-                Sleep(5000);
-            }
-            else
-            {
-                if (openn == 1) {
-                    std::cout << "\033[31;1m检测到异常断开连接，开始尝试重新连接\033[0m" << std::endl;
-                    openn = 0;
-                }
-                Sleep(2000);
-            }
-        }
-        std::cout << "\033[32;1m跳出while了\033[0m";
+        seeduuid();
         t1.join();
-        UDP.join();
+        hea.join();
+        udp.join();
         
     }
     else if (type == 2)
@@ -169,39 +140,13 @@ int main()
         ifs2.close();
         SrcPort = op["apps"][0]["SrcPort"];
         std::thread t1(openp2p);
-        std::thread UDP(UDPMC);
+        std::thread hea(heart);
+        std::thread udp(UDPMC);
         Sleep(2000);
-        nlohmann::json op2;
-        std::ifstream ifs3("bin\\config.json");
-        ifs3 >> op2;
-        ifs3.close();
-        myuuid = op2["network"]["Node"];
-        std::ostringstream ss;
-        ss << "\033[31;1m(以这个为准)你的UUID为:" << myuuid << "\033[0m";
-        std::string message = ss.str();
-        std::cout << message << std::endl;
-        const char* serverIP = "127.0.0.1";
-        while (true)
-        {
-            if (checkMCServerOnline(serverIP, SrcPort)) {
-                if (openn == 0) {
-                    std::cout << "\033[32;1m连接成功,请直接打开游戏从局域网进入\033[0m" << std::endl;
-                    openn = 1;
-                }
-                std::cout << "\033[32;1m连接正常\033[0m  ";
-                Sleep(5000);
-            }
-            else
-            {
-                if (openn == 1) {
-                    std::cout << "\033[32;1m检测到异常断开连接，开始尝试重新连接\033[0m" << std::endl;
-                    openn = 0;
-                }
-                Sleep(2000);
-            }
-        }
+        seeduuid();
         t1.join();
-        UDP.join();
+        hea.join();
+        udp.join();
     }
     else
     {
@@ -209,6 +154,46 @@ int main()
     }
     system("pause");
     return 0;
+}
+//发送当前uuid，读op配置
+void seeduuid() {
+    std::string myuuid;
+    nlohmann::json op2;
+    std::ifstream ifs22("bin\\config.json");
+    ifs22 >> op2;
+    ifs22.close();
+    myuuid = op2["network"]["Node"];
+    std::ostringstream ss;
+    ss << "\033[31;1m(以这个为准)你的UUID为:" << myuuid << "\033[0m";
+    std::string message = ss.str();
+    std::cout << message << std::endl;
+}
+//程序端口心跳
+void heart() {
+    bool checkMCServerOnline(const char* serverIP, int serverPort);
+    const char* serverIP = "127.0.0.1";
+    udpopen = 0;
+    while (true)
+    {
+        if (checkMCServerOnline(serverIP, SrcPort)) {
+            if (openn == 0) {
+                std::cout << "\033[32;1m连接成功,请直接打开游戏从局域网进入\033[0m" << std::endl;
+                openn = 1;
+                udpopen = 1;
+            }
+            std::cout << "\033[32;1m连接正常\033[0m  ";
+            Sleep(7000);
+        }
+        else
+        {
+            if (openn == 1) {
+                std::cout << "\033[31;1m检测到异常断开连接，开始尝试重新连接\033[0m" << std::endl;
+                openn = 0;
+                udpopen = 0;
+            }
+            Sleep(2000);
+        }
+    }
 }
 void openp2p() {
     system("bin\\openp2p.exe");
@@ -298,7 +283,7 @@ int app()
 }
 int UDPMC()
 {
-    if (SrcPort != 0) {
+    if (SrcPort != 0&&udpopen==1) {
         // 初始化 Winsock
         WSADATA wsaData;
         if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
@@ -325,8 +310,8 @@ int UDPMC()
         addr.sin_addr.s_addr = inet_addr(MULTICAST_GROUP);
         addr.sin_port = htons(MULTICAST_PORT);
 
-
-        while (true) {
+        std::cout << "开启局域网发现";
+        while (udpopen) {
             // 使用 std::ostringstream 进行转换和编码
             std::ostringstream ss;
             ss << u8"[MOTD]§2§l[OPL]§b远程世界 §7-by GLD[/MOTD][AD]" << SrcPort << "[/AD]";
@@ -336,12 +321,14 @@ int UDPMC()
             //std::cout << "Sent: " << message << std::endl;
             Sleep(1500); // Sleep for a while before sending the next message
         }
-
+        std::cout << "关闭局域网发现";
         closesocket(sock);
 
         // 清理 Winsock 资源
         WSACleanup();
     }
+    Sleep(5000);
+    UDPMC();
     return 0;
 }
 bool checkMCServerOnline(const char* serverIP, int serverPort) {
@@ -371,7 +358,7 @@ bool checkMCServerOnline(const char* serverIP, int serverPort) {
     }
 
     if (connect(sock, (struct sockaddr*)&serverAddress, sizeof(serverAddress)) != 0) {
-        std::cerr << "Server not online" << std::endl;
+        std::cerr << "连接中..." << std::endl;
         closesocket(sock);
         WSACleanup();
         return false;

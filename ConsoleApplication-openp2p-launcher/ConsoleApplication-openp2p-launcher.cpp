@@ -81,7 +81,7 @@ int main()
         outfile << myuuid << std::endl;
         outfile.close();
     }
-    std::cout << "*初始化完毕*\n***************OPL-0.5.5**********************\n                使用说明\n    1.根据提示输入参数\n    2.注意你的uuid是：" << myuuid << "\n    4.被连接需要把你的uuid和端口发给对方\n    3.程序文档：https://gld.rth1.link/md/opl\n    4.本程序基于openp2p\n*********************************************\n" << std::endl;
+    std::cout << "*初始化完毕*\n***************OPL-0.5.5.2**********************\n                使用说明\n    1.根据提示输入参数\n    2.注意你的uuid是：" << myuuid << "\n    4.被连接需要把你的uuid和端口发给对方\n    3.程序文档：https://gld.rth1.link/md/opl\n    4.本程序基于openp2p\n*********************************************\n" << std::endl;
     system("title openp2p-launcher-by-Guailoudou");
     std::cout << "被连接：输入0||连接：输入1，以上一次的连接方式连接输入2 " << std::endl;
     std::cin >> type;
@@ -112,7 +112,7 @@ int main()
         while (true)
         {
             if (checkMCServerOnline(serverIP, SrcPort)) {
-                SrcPort = DstPort - 1;
+                SrcPort = SrcPort - 1;
             }
             else
             {
@@ -177,7 +177,7 @@ void heart() {
     {
         if (checkMCServerOnline(serverIP, SrcPort)) {
             if (openn == 0) {
-                std::cout << "\033[32;1m连接成功,请直接打开游戏从局域网进入\033[0m" << std::endl;
+                std::cout << "\033[32;1m连接成功,请直接打开游戏从局域网进入,如果5s内没有出现在局域网，请手动添加服务器127.0.0.1:"<< SrcPort << "\033[0m" << std::endl;
                 openn = 1;
                 udpopen = 1;
             }

@@ -1,4 +1,4 @@
-#include <iostream>
+﻿#include <iostream>
 #include <fstream>
 #include <sstream>
 #include <iomanip>
@@ -23,13 +23,14 @@
 #include "resource.h"
 #include "releaseHelper.h"
 int SrcPort,openn=0,udpopen;
+std::string version = "0.5.2.3";
+//声明函数.
+bool isFileExists_ifstream(std::string & name),checkMCServerOnline(const char* serverIP, int serverPort);
+void play0(std::string myuuid), play1(int SrcPort,  std::string uuid, std::string myuuid), openp2p(), heart(),seeduuid(),startapp();
+int app(),UDPMC(),mobapp();
+std::string create_uuid();
 int main()
 {
-    //声明函数.
-    bool isFileExists_ifstream(std::string & name),checkMCServerOnline(const char* serverIP, int serverPort);
-    void play0(std::string myuuid), play1(int SrcPort,  std::string uuid, std::string myuuid), openp2p(), heart(),seeduuid();
-    int app(),UDPMC();
-    std::string create_uuid();
     //声明变量
     int type, DstPort;
     std::string uuid, myuuid;
@@ -81,7 +82,7 @@ int main()
         outfile << myuuid << std::endl;
         outfile.close();
     }
-    std::cout << "*初始化完毕*\n***************OPL-0.5.5.2**********************\n                使用说明\n    1.根据提示输入参数\n    2.注意你的uuid是：" << myuuid << "\n    4.被连接需要把你的uuid和端口发给对方\n    3.程序文档：https://gld.rth1.link/md/opl\n    4.本程序基于openp2p\n*********************************************\n" << std::endl;
+    std::cout << "*初始化完毕*\n***************OPL-"<< version <<" * *********************\n                使用说明\n    1.根据提示输入参数\n    2.注意你的uuid是：" << myuuid << "\n    4.被连接需要把你的uuid和端口发给对方\n    3.程序文档：https://gld.rth1.link/md/opl\n    4.本程序基于openp2p\n*********************************************\n" << std::endl;
     system("title openp2p-launcher-by-Guailoudou");
     std::cout << "被连接：输入0||连接：输入1，以上一次的连接方式连接输入2 " << std::endl;
     std::cin >> type;
@@ -100,12 +101,18 @@ int main()
         std::string message = ss.str();
         std::cout << message << std::endl;
         t1.join();
+        mobapp();
     }
     else if (type == 1)
     {
         const char* serverIP = "127.0.0.1";
         std::cout << "开始运行之后直接打开游戏从局域网进入\n请输入对方uuid：" << std::endl;
         std::cin >> uuid;
+        if (uuid == myuuid) {
+            std::cout << "你不能自己连自己，如果uuid是别人发你的，请去删除bin文件夹后重启软件" << std::endl;
+            system("pause");
+            return 0;
+        }
         std::cout << "请输入对方端口：" << std::endl;
         std::cin >> DstPort;
         SrcPort = DstPort;
@@ -122,14 +129,7 @@ int main()
         std::cout << "程序2s后开始运行,请直接打开游戏等待提示连接成功后从局域网进入";
         Sleep(2000);
         play1(DstPort, uuid, myuuid);
-        std::thread t1(openp2p);
-        std::thread hea(heart);
-        std::thread udp(UDPMC);
-        Sleep(2000);
-        seeduuid();
-        t1.join();
-        hea.join();
-        udp.join();
+        startapp();
         
     }
     else if (type == 2)
@@ -139,14 +139,7 @@ int main()
         ifs2 >> op;
         ifs2.close();
         SrcPort = op["apps"][0]["SrcPort"];
-        std::thread t1(openp2p);
-        std::thread hea(heart);
-        std::thread udp(UDPMC);
-        Sleep(2000);
-        seeduuid();
-        t1.join();
-        hea.join();
-        udp.join();
+        startapp();
     }
     else
     {
@@ -167,6 +160,18 @@ void seeduuid() {
     ss << "\033[31;1m(以这个为准)你的UUID为:" << myuuid << "\033[0m";
     std::string message = ss.str();
     std::cout << message << std::endl;
+}
+//启动程序（连接）
+void startapp() {
+    std::thread t1(openp2p);
+    std::thread hea(heart);
+    std::thread udp(UDPMC);
+    Sleep(2000);
+    seeduuid();
+    t1.join();
+    mobapp();
+    hea.join();
+    udp.join();
 }
 //程序端口心跳
 void heart() {
@@ -281,6 +286,15 @@ int app()
     }
     return 0;
 }
+int mobapp() {
+    std::string upapps = "bin\\bin\\openp2p.exe";
+    if (isFileExists_ifstream(upapps)) {
+        system("move bin\\bin\\openp2p.exe bin\\openp2p.exe");
+        std::cout << "更新openp2p版本成功" << std::endl;
+    }
+    return 0;
+}
+//发送udp多播
 int UDPMC()
 {
     if (SrcPort != 0&&udpopen==1) {
@@ -331,6 +345,8 @@ int UDPMC()
     UDPMC();
     return 0;
 }
+
+//检测是否在线
 bool checkMCServerOnline(const char* serverIP, int serverPort) {
     WSADATA wsaData;
     if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {

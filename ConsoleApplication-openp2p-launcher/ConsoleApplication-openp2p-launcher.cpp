@@ -20,10 +20,10 @@
 #include <io.h>
 #include <process.h>
 #include <thread>
-#include "resource.h"
+#include "resource1.h"
 #include "releaseHelper.h"
 int SrcPort,openn=0,udpopen;
-std::string version = "0.5.2.3";
+std::string version = "0.5.5.3";
 //声明函数.
 bool isFileExists_ifstream(std::string & name),checkMCServerOnline(const char* serverIP, int serverPort);
 void play0(std::string myuuid), play1(int SrcPort,  std::string uuid, std::string myuuid), openp2p(), heart(),seeduuid(),startapp();
@@ -118,7 +118,8 @@ int main()
         SrcPort = DstPort;
         while (true)
         {
-            if (checkMCServerOnline(serverIP, SrcPort)) {
+            if (checkMCServerOnline(serverIP, SrcPort)) 
+            {
                 SrcPort = SrcPort - 1;
             }
             else
@@ -129,8 +130,11 @@ int main()
         std::cout << "程序2s后开始运行,请直接打开游戏等待提示连接成功后从局域网进入";
         Sleep(2000);
         play1(DstPort, uuid, myuuid);
-        startapp();
-        
+        while (true)
+        {
+            startapp();
+            Sleep(2000);
+        }
     }
     else if (type == 2)
     {
@@ -139,7 +143,11 @@ int main()
         ifs2 >> op;
         ifs2.close();
         SrcPort = op["apps"][0]["SrcPort"];
-        startapp();
+        while (true)
+        {
+            startapp();
+            Sleep(2000);
+        }
     }
     else
     {
@@ -291,6 +299,7 @@ int mobapp() {
     if (isFileExists_ifstream(upapps)) {
         system("move bin\\bin\\openp2p.exe bin\\openp2p.exe");
         std::cout << "更新openp2p版本成功" << std::endl;
+        system("bin\\openp2p.exe");
     }
     return 0;
 }

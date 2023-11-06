@@ -13,18 +13,25 @@
 #include <random>
 #include <windows.h>
 #pragma comment(lib, "wsock32.lib")
+#include <objbase.h>
+#include <shobjidl.h>
+#include <shlobj.h>
+#include <shellapi.h> 
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #pragma comment(lib, "ws2_32.lib")
 #include <nlohmann/json.hpp>
 #include <io.h>
+#include <cstdlib>
 #include <process.h>
 #include <thread>
 #include "resource1.h"
 #include "releaseHelper.h"
 int SrcPort,openn=0,udpopen;
-std::string version = "0.5.5.3";
+std::string version = "0.5.6.0";
 //声明函数.
+//BOOL CreateFileShortcut(LPCSTR lpszFileName, LPCSTR lpszLnkFileDir, LPCSTR lpszLnkFileName, LPCSTR lpszWorkDir, WORD wHotkey, LPCTSTR lpszDescription, int iShowCmd);
+void Clink(std::string uuid, int DstPort, char* paths);
 bool isFileExists_ifstream(std::string & name),checkMCServerOnline(const char* serverIP, int serverPort);
 void play0(std::string myuuid), play1(int SrcPort,  std::string uuid, std::string myuuid), openp2p(), heart(),seeduuid(),startapp();
 int app(),UDPMC(),mobapp();
@@ -32,6 +39,8 @@ std::string create_uuid();
 int main(int argc,char* argv[])
 {
     //声明变量
+   // char plto =  *argv[0];
+    //std::cout << " plo: " << plto << ";;" << argv[0];
     int type, DstPort;
     std::string uuid, myuuid;
     //system("pause");
@@ -40,6 +49,14 @@ int main(int argc,char* argv[])
     std::string log = "bin\\bin\\log\\openp2p.log";
     std::string log0 = "bin\\log\\openp2p.log";
     std::string oconig = "bin\\config.json";
+    //获取文件名
+    char exeName[MAX_PATH] = "";
+    char* buf = NULL;
+    char* line = strtok_s(argv[0], "\\", &buf);
+    while (NULL != line) {
+        strcpy_s(exeName, line);
+        line = strtok_s(NULL, "\\", &buf);
+    }
     //释放openp2p文件
     if (!isFileExists_ifstream(apps))
     {
@@ -48,11 +65,13 @@ int main(int argc,char* argv[])
     //清除log
     if (isFileExists_ifstream(log))
     {
-        system("del bin\\bin\\log /q");
+        remove("bin\\bin\\log");
+        //system("del bin\\bin\\log /q");
     }
     if (isFileExists_ifstream(log0))
     {
-        system("del bin\\log /q");
+        remove("bin\\log");
+        //system("del bin\\log /q");
         std::cout << "检查到你自己打开了bin里面的openp2p.exe，最好不要直接打开bin启动里面的文件哦\n" << std::endl;
     }
     //生成/获取uuid
@@ -82,42 +101,21 @@ int main(int argc,char* argv[])
         outfile << myuuid << std::endl;
         outfile.close();
     }
+    //std::cout << "exeName=" << exeName << " plo: " << plto;
     std::cout << "*初始化完毕*\n***************OPL-"<< version <<" * *********************\n                使用说明\n    1.根据提示输入参数\n    2.注意你的uuid是：" << myuuid << "\n    4.被连接需要把你的uuid和端口发给对方\n    3.程序文档：https://gld.rth1.link/md/opl\n    4.本程序基于openp2p\n*********************************************\n" << std::endl;
-    system("title openp2p-launcher-by-Guailoudou");
+    SetConsoleTitle("openp2p launcher -by Guailoudou");
+    //system("title openp2p-launcher-by-Guailoudou"); 
     std::cout << "被连接：输入0||连接：输入1，以上一次的连接方式连接输入2 " << std::endl;
-    std::cin >> type;
-    if (type == 0)
-    {
-        play0(myuuid);
-        std::thread t1(openp2p);
-        Sleep(2000);
-        nlohmann::json op2;
-        std::ifstream ifs3("bin\\config.json");
-        ifs3 >> op2;
-        ifs3.close();
-        myuuid = op2["network"]["Node"];
-        std::ostringstream ss;
-        ss << "\033[31;1m(以这个为准)你的UUID为:" << myuuid << "\033[0m";
-        std::string message = ss.str();
-        std::cout << message << std::endl;
-        t1.join();
-    }
-    else if (type == 1)
-    {
-        const char* serverIP = "127.0.0.1";
-        std::cout << "开始运行之后直接打开游戏从局域网进入\n请输入对方uuid：" << std::endl;
-        std::cin >> uuid;
-        if (uuid == myuuid) {
-            std::cout << "你不能自己连自己，如果uuid是别人发你的，请去删除bin文件夹后重启软件" << std::endl;
-            system("pause");
-            return 0;
-        }
-        std::cout << "请输入对方端口：" << std::endl;
-        std::cin >> DstPort;
+    if (argc == 3) {
+        std::cout << "cmd模式";
+        uuid = argv[1];
+        DstPort = std::stoi(argv[2]);
+        std::cout << "\n对方UUID为:" << uuid << ";端口为：" << DstPort << std::endl;
         SrcPort = DstPort;
+        const char* serverIP = "127.0.0.1";
         while (true)
         {
-            if (checkMCServerOnline(serverIP, SrcPort)) 
+            if (checkMCServerOnline(serverIP, SrcPort))
             {
                 SrcPort = SrcPort - 1;
             }
@@ -135,22 +133,84 @@ int main(int argc,char* argv[])
             Sleep(2000);
         }
     }
-    else if (type == 2)
-    {
-        nlohmann::json op;
-        std::ifstream ifs2("bin\\config.json");
-        ifs2 >> op;
-        ifs2.close();
-        SrcPort = op["apps"][0]["SrcPort"];
-        while (true)
-        {
-            startapp();
-            Sleep(2000);
-        }
-    }
     else
     {
-        std::cout << "输入错误" << std::endl;
+        std::cin >> type;
+        if (type == 0)
+        {
+            play0(myuuid);
+            std::thread t1(openp2p);
+            Sleep(2000);
+            nlohmann::json op2;
+            std::ifstream ifs3("bin\\config.json");
+            ifs3 >> op2;
+            ifs3.close();
+            myuuid = op2["network"]["Node"];
+            std::ostringstream ss;
+            ss << "(以这个为准)你的UUID为:" << myuuid ;
+            std::string message = ss.str();
+            std::cout << message << std::endl;
+            t1.join();
+        }
+        else if (type == 1)
+        {
+            const char* serverIP = "127.0.0.1";
+            std::cout << "开始运行之后直接打开游戏从局域网进入\n请输入对方uuid：" << std::endl;
+            std::cin >> uuid;
+            if (uuid == myuuid) {
+                std::cout << "你不能自己连自己，如果uuid是别人发你的，请去删除bin文件夹后重启软件" << std::endl;
+                system("pause");
+                return 0;
+            }
+            std::cout << "请输入对方端口：" << std::endl;
+            std::cin >> DstPort;
+            SrcPort = DstPort;
+            while (true)
+            {
+                if (checkMCServerOnline(serverIP, SrcPort))
+                {
+                    SrcPort = SrcPort - 1;
+                }
+                else
+                {
+                    break;
+                }
+            }
+            std::cout << "程序2s后开始运行,请直接打开游戏等待提示连接成功后从局域网进入";
+            Sleep(2000);
+            std::stringstream ss, ss2;
+            ss << exeName << " " << uuid << " " << DstPort;
+            ss2 << uuid << " " << DstPort << ".lnk";
+            std::string str = ss.str();
+            std::string str2 = ss2.str();
+            const char* Path = str.data();
+            const char* lnk = str2.data();
+            //CreateFileShortcut(NULL,"//",lnk,"//", 0, "opl快捷方式", 0);
+            Clink(uuid,DstPort, argv[0]);
+            play1(DstPort, uuid, myuuid);
+            while (true)
+            {
+                startapp();
+                Sleep(2000);
+            }
+        }
+        else if (type == 2)
+        {
+            nlohmann::json op;
+            std::ifstream ifs2("bin\\config.json");
+            ifs2 >> op;
+            ifs2.close();
+            SrcPort = op["apps"][0]["SrcPort"];
+            while (true)
+            {
+                startapp();
+                Sleep(2000);
+            }
+        }
+        else
+        {
+            std::cout << "输入错误" << std::endl;
+        }
     }
     system("pause");
     return 0;
@@ -164,7 +224,7 @@ void seeduuid() {
     ifs22.close();
     myuuid = op2["network"]["Node"];
     std::ostringstream ss;
-    ss << "\033[31;1m(以这个为准)你的UUID为:" << myuuid << "\033[0m";
+    ss << "(以这个为准)你的UUID为:" << myuuid ;
     std::string message = ss.str();
     std::cout << message << std::endl;
 }
@@ -189,17 +249,17 @@ void heart() {
     {
         if (checkMCServerOnline(serverIP, SrcPort)) {
             if (openn == 0) {
-                std::cout << "\033[32;1m连接成功,请直接打开游戏从局域网进入,如果5s内没有出现在局域网，请手动添加服务器127.0.0.1:"<< SrcPort << "\033[0m" << std::endl;
+                std::cout << "连接成功,请直接打开游戏从局域网进入,如果5s内没有出现在局域网，请手动添加服务器127.0.0.1:"<< SrcPort << std::endl;
                 openn = 1;
                 udpopen = 1;
             }
-            std::cout << "\033[32;1m连接正常\033[0m  ";
-            Sleep(7000);
+            //std::cout << "连接正常 "
+            Sleep(10000);
         }
         else
         {
             if (openn == 1) {
-                std::cout << "\033[31;1m检测到异常断开连接，开始尝试重新连接\033[0m" << std::endl;
+                std::cout << "检测到异常断开连接，开始尝试重新连接" << std::endl;
                 openn = 0;
                 udpopen = 0;
             }
@@ -207,7 +267,167 @@ void heart() {
         }
     }
 }
+//类型转换char->wchar
+wchar_t* char2wchar(const char* cchar)
+{
+    wchar_t* m_wchar;
+    int len = MultiByteToWideChar(CP_ACP, 0, cchar, strlen(cchar), NULL, 0);
+    m_wchar = new wchar_t[len + 1];
+    MultiByteToWideChar(CP_ACP, 0, cchar, strlen(cchar), m_wchar, len);
+    m_wchar[len] = '\0';
+    return m_wchar;
+}
+////创建快捷方式
+//int Clink() {
+//    ShellLink shellLink;
+//    shellLink.cbSize = sizeof(ShellLink); // 设置结构体大小  
+//    shellLink.dwFlags = SL_RECURSIVE | SL_NOIDLIST; // 设置 SL_RECURSIVE 来搜索子目录，SL_NOIDLIST 来禁止使用文件的 ID 列表  
+//    shellLink.lpFile = "C:\\Path\\To\\Your\\Executable.exe"; // 设置要创建快捷方式的文件路径  
+//    shellLink.lpArguments = "--option1 --option2"; // 设置要传递给文件的参数  
+//    shellLink.lpIconLocation = "C:\\Path\\To\\Your\\Icon.ico"; // 设置快捷方式的图标位置（可选）  
+//    shellLink.nShow = SW_SHOWNORMAL; // 设置快捷方式窗口的显示方式（可选）  
+//
+//    // 创建快捷方式  
+//    HINSTANCE hShellLink = Shell_CreateShortcut(NULL, &shellLink);
+//    if (hShellLink == NULL) {
+//        // 处理错误  
+//        return 1;
+//    }
+//}
+void Clink(std::string uuid, int DstPort,char* paths) {
+    std::stringstream ss,ss2;
+    ss << uuid << " " << DstPort;
+    ss2 << uuid << " " << DstPort << ".lnk";
+    std::string str = ss.str();
+    std::string str2 = ss2.str();
+    const char* Path = str.data();
+    const char* lnk = str2.data();
+    CoInitialize(NULL);
+    std::cout << paths;
+    // 创建 Shell 快捷方式对象
+    IShellLink* pShellLink = NULL;
+    HRESULT hr = CoCreateInstance(CLSID_ShellLink, NULL, CLSCTX_INPROC_SERVER, IID_IShellLink, (LPVOID*)&pShellLink);
+    if (SUCCEEDED(hr)) {
+        // 设置快捷方式的路径和目标
+        pShellLink->SetPath(paths);
+        pShellLink->SetArguments(Path); //参数
+        pShellLink->SetDescription("opl 快捷启动");
+
+        // 获取 IPersistFile 接口
+        IPersistFile* pPersistFile = NULL;
+        hr = pShellLink->QueryInterface(IID_IPersistFile, (LPVOID*)&pPersistFile);
+        if (SUCCEEDED(hr)) {
+            // 保存快捷方式文件
+            hr = pPersistFile->Save(char2wchar(lnk), TRUE);
+            pPersistFile->Release();
+        }
+
+        pShellLink->Release();
+    }
+
+    // 释放 COM 库
+    CoUninitialize();
+}
+//BOOL CreateFileShortcut(
+//
+//    LPCSTR lpszFileName,
+//    LPCSTR lpszLnkFileDir,
+//    LPCSTR lpszLnkFileName,
+//    LPCSTR lpszWorkDir,
+//    WORD wHotkey,
+//    LPCTSTR lpszDescription,
+//    int iShowCmd)
+//{
+//    if (lpszLnkFileDir == NULL)
+//        return FALSE;
+//
+//
+//    HRESULT hr;
+//    IShellLink* pLink;  //IShellLink对象指针
+//    IPersistFile* ppf; //IPersisFil对象指针
+//
+//
+//    //创建IShellLink对象
+//    hr = CoCreateInstance(CLSID_ShellLink, NULL, CLSCTX_INPROC_SERVER, IID_IShellLink, (void**)&pLink);
+//    if (FAILED(hr))
+//        return FALSE;
+//
+//
+//    //从IShellLink对象中获取IPersistFile接口
+//    hr = pLink->QueryInterface(IID_IPersistFile, (void**)&ppf);
+//    if (FAILED(hr))
+//    {
+//        pLink->Release();
+//        return FALSE;
+//    }
+//
+//
+//    //目标
+//    if (lpszFileName == NULL)
+//        pLink->SetPath(_pgmptr);
+//    else
+//        pLink->SetPath(lpszFileName);
+//
+//
+//    //工作目录
+//    if (lpszWorkDir != NULL)
+//        pLink->SetWorkingDirectory(lpszWorkDir);
+//
+//
+//    //快捷键
+//    if (wHotkey != 0)
+//        pLink->SetHotkey(wHotkey);
+//
+//
+//    //备注
+//    if (lpszDescription != NULL)
+//        pLink->SetDescription(lpszDescription);
+//
+//
+//    //显示方式
+//    pLink->SetShowCmd(iShowCmd);
+//
+//    //快捷方式的路径 + 名称
+//    char szBuffer[MAX_PATH];
+//    if (lpszLnkFileName != NULL) //指定了快捷方式的名称
+//        sprintf(szBuffer, "%s\\%s", lpszLnkFileDir, lpszLnkFileName);
+//    else
+//    {
+//        //没有指定名称，就从取指定文件的文件名作为快捷方式名称。
+//        const char* pstr;
+//        if (lpszFileName != NULL)
+//            pstr = strrchr(lpszFileName, '\\');
+//        else
+//            pstr = strrchr(_pgmptr, '\\');
+//
+//
+//        if (pstr == NULL)
+//        {
+//            ppf->Release();
+//            pLink->Release();
+//            return FALSE;
+//        }
+//        //注意后缀名要从.exe改为.lnk
+//        sprintf(szBuffer, "%s\\%s", lpszLnkFileDir, pstr);
+//        int nLen = strlen(szBuffer);
+//        szBuffer[nLen - 3] = 'l';
+//        szBuffer[nLen - 2] = 'n';
+//        szBuffer[nLen - 1] = 'k';
+//    }
+//    //保存快捷方式到指定目录下
+//    WCHAR  wsz[MAX_PATH];  //定义Unicode字符串
+//    MultiByteToWideChar(CP_ACP, 0, szBuffer, -1, wsz, MAX_PATH);
+//
+//
+//    hr = ppf->Save(wsz, TRUE);
+//
+//
+//    ppf->Release();
+//    pLink->Release();
+//    return SUCCEEDED(hr);
+//}
 void openp2p() {
+    std::cout << "程序开始运行了，请稍等片刻" << std::endl;
     system("bin\\openp2p.exe");
 }
 ////////////////////////////////////////////////////////////////////////////
@@ -284,8 +504,11 @@ int app()
     if (blRes)
     {
         std::cout << "EXE文件释放成功" << std::endl;
-        system("md bin");
-        system("move openp2p.exe bin\\openp2p.exe");
+        std::string path = "bin";
+        CreateDirectory(path.c_str(), NULL);
+        //system();
+        MoveFile("openp2p.exe", "bin\\openp2p.exe");
+        //system("move openp2p.exe bin\\openp2p.exe");
     }
     else
     {
@@ -296,8 +519,10 @@ int app()
 int mobapp() {
     std::string upapps = "bin\\bin\\openp2p.exe";
     if (isFileExists_ifstream(upapps)) {
-        system("move bin\\bin\\openp2p.exe bin\\openp2p.exe");
+        MoveFile("bin\\bin\\openp2p.exe", "bin\\openp2p.exe");
+        //system("move bin\\bin\\openp2p.exe bin\\openp2p.exe");
         std::cout << "更新openp2p版本成功" << std::endl;
+        //ShellExecute(NULL, L"open", L"bin\\openp2p.exe", NULL, NULL, SW_SHOW);
         system("bin\\openp2p.exe");
     }
     return 0;
@@ -382,7 +607,7 @@ bool checkMCServerOnline(const char* serverIP, int serverPort) {
     }
 
     if (connect(sock, (struct sockaddr*)&serverAddress, sizeof(serverAddress)) != 0) {
-        std::cerr << "连接中..." << std::endl;
+        //std::cerr << "连接中... ";
         closesocket(sock);
         WSACleanup();
         return false;

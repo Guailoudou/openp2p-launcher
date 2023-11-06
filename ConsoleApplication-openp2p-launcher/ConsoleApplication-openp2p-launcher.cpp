@@ -29,7 +29,7 @@ bool isFileExists_ifstream(std::string & name),checkMCServerOnline(const char* s
 void play0(std::string myuuid), play1(int SrcPort,  std::string uuid, std::string myuuid), openp2p(), heart(),seeduuid(),startapp();
 int app(),UDPMC(),mobapp();
 std::string create_uuid();
-int main()
+int main(int argc,char* argv[])
 {
     //声明变量
     int type, DstPort;

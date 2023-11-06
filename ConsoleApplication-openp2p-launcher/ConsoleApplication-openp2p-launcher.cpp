@@ -30,7 +30,6 @@
 int SrcPort,openn=0,udpopen;
 std::string version = "0.5.6.0";
 //声明函数.
-//BOOL CreateFileShortcut(LPCSTR lpszFileName, LPCSTR lpszLnkFileDir, LPCSTR lpszLnkFileName, LPCSTR lpszWorkDir, WORD wHotkey, LPCTSTR lpszDescription, int iShowCmd);
 void Clink(std::string uuid, int DstPort, char* paths);
 bool isFileExists_ifstream(std::string & name),checkMCServerOnline(const char* serverIP, int serverPort);
 void play0(std::string myuuid), play1(int SrcPort,  std::string uuid, std::string myuuid), openp2p(), heart(),seeduuid(),startapp();
@@ -39,8 +38,6 @@ std::string create_uuid();
 int main(int argc,char* argv[])
 {
     //声明变量
-   // char plto =  *argv[0];
-    //std::cout << " plo: " << plto << ";;" << argv[0];
     int type, DstPort;
     std::string uuid, myuuid;
     //system("pause");
@@ -49,14 +46,6 @@ int main(int argc,char* argv[])
     std::string log = "bin\\bin\\log\\openp2p.log";
     std::string log0 = "bin\\log\\openp2p.log";
     std::string oconig = "bin\\config.json";
-    //获取文件名
-    char exeName[MAX_PATH] = "";
-    char* buf = NULL;
-    char* line = strtok_s(argv[0], "\\", &buf);
-    while (NULL != line) {
-        strcpy_s(exeName, line);
-        line = strtok_s(NULL, "\\", &buf);
-    }
     //释放openp2p文件
     if (!isFileExists_ifstream(apps))
     {
@@ -105,7 +94,7 @@ int main(int argc,char* argv[])
     std::cout << "*初始化完毕*\n***************OPL-"<< version <<" * *********************\n                使用说明\n    1.根据提示输入参数\n    2.注意你的uuid是：" << myuuid << "\n    4.被连接需要把你的uuid和端口发给对方\n    3.程序文档：https://gld.rth1.link/md/opl\n    4.本程序基于openp2p\n*********************************************\n" << std::endl;
     SetConsoleTitle("openp2p launcher -by Guailoudou");
     //system("title openp2p-launcher-by-Guailoudou"); 
-    std::cout << "被连接：输入0||连接：输入1，以上一次的连接方式连接输入2 " << std::endl;
+    std::cout << "被连接：输入0||新建连接：输入1，历史记录查看快捷方式" << std::endl;
     if (argc == 3) {
         std::cout << "cmd模式";
         uuid = argv[1];
@@ -179,28 +168,8 @@ int main(int argc,char* argv[])
             std::cout << "程序2s后开始运行,请直接打开游戏等待提示连接成功后从局域网进入";
             Sleep(2000);
             std::stringstream ss, ss2;
-            ss << exeName << " " << uuid << " " << DstPort;
-            ss2 << uuid << " " << DstPort << ".lnk";
-            std::string str = ss.str();
-            std::string str2 = ss2.str();
-            const char* Path = str.data();
-            const char* lnk = str2.data();
-            //CreateFileShortcut(NULL,"//",lnk,"//", 0, "opl快捷方式", 0);
             Clink(uuid,DstPort, argv[0]);
             play1(DstPort, uuid, myuuid);
-            while (true)
-            {
-                startapp();
-                Sleep(2000);
-            }
-        }
-        else if (type == 2)
-        {
-            nlohmann::json op;
-            std::ifstream ifs2("bin\\config.json");
-            ifs2 >> op;
-            ifs2.close();
-            SrcPort = op["apps"][0]["SrcPort"];
             while (true)
             {
                 startapp();
@@ -277,23 +246,6 @@ wchar_t* char2wchar(const char* cchar)
     m_wchar[len] = '\0';
     return m_wchar;
 }
-////创建快捷方式
-//int Clink() {
-//    ShellLink shellLink;
-//    shellLink.cbSize = sizeof(ShellLink); // 设置结构体大小  
-//    shellLink.dwFlags = SL_RECURSIVE | SL_NOIDLIST; // 设置 SL_RECURSIVE 来搜索子目录，SL_NOIDLIST 来禁止使用文件的 ID 列表  
-//    shellLink.lpFile = "C:\\Path\\To\\Your\\Executable.exe"; // 设置要创建快捷方式的文件路径  
-//    shellLink.lpArguments = "--option1 --option2"; // 设置要传递给文件的参数  
-//    shellLink.lpIconLocation = "C:\\Path\\To\\Your\\Icon.ico"; // 设置快捷方式的图标位置（可选）  
-//    shellLink.nShow = SW_SHOWNORMAL; // 设置快捷方式窗口的显示方式（可选）  
-//
-//    // 创建快捷方式  
-//    HINSTANCE hShellLink = Shell_CreateShortcut(NULL, &shellLink);
-//    if (hShellLink == NULL) {
-//        // 处理错误  
-//        return 1;
-//    }
-//}
 void Clink(std::string uuid, int DstPort,char* paths) {
     std::stringstream ss,ss2;
     ss << uuid << " " << DstPort;
@@ -303,8 +255,7 @@ void Clink(std::string uuid, int DstPort,char* paths) {
     const char* Path = str.data();
     const char* lnk = str2.data();
     CoInitialize(NULL);
-    std::cout << paths;
-    // 创建 Shell 快捷方式对象
+    // 创建 Shell 快捷方式对象.
     IShellLink* pShellLink = NULL;
     HRESULT hr = CoCreateInstance(CLSID_ShellLink, NULL, CLSCTX_INPROC_SERVER, IID_IShellLink, (LPVOID*)&pShellLink);
     if (SUCCEEDED(hr)) {

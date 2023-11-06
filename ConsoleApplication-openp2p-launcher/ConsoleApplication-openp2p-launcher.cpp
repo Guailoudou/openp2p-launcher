@@ -101,7 +101,6 @@ int main()
         std::string message = ss.str();
         std::cout << message << std::endl;
         t1.join();
-        mobapp();
     }
     else if (type == 1)
     {

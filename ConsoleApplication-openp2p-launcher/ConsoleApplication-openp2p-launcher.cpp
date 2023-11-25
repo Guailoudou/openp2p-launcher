@@ -90,6 +90,7 @@ int main(int argc,char* argv[])
         outfile << myuuid << std::endl;
         outfile.close();
     }
+    system("chcp 936");
     //std::cout << "exeName=" << exeName << " plo: " << plto;
     std::cout << "*初始化完毕*\n***************OPL-"<< version <<" * *********************\n                使用说明\n    1.根据提示输入参数\n    2.注意你的uuid是：" << myuuid << "\n    4.被连接需要把你的uuid和端口发给对方\n    3.程序文档：https://gld.rth1.link/md/opl\n    4.本程序基于openp2p\n*********************************************\n" << std::endl;
     SetConsoleTitle("openp2p launcher -by Guailoudou");
@@ -140,6 +141,7 @@ int main(int argc,char* argv[])
             std::string message = ss.str();
             std::cout << message << std::endl;
             t1.join();
+            mobapp();
         }
         else if (type == 1)
         {

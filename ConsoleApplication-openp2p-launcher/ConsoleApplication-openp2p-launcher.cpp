@@ -28,7 +28,7 @@
 #include "resource1.h"
 #include "releaseHelper.h"
 int SrcPort,openn=0,udpopen;
-std::string version = "0.5.6.0";
+std::string version = "0.5.6.1";
 //声明函数.
 void Clink(std::string uuid, int DstPort, char* paths);
 bool isFileExists_ifstream(std::string & name),checkMCServerOnline(const char* serverIP, int serverPort);

@@ -102,6 +102,7 @@ int main(int argc,char* argv[])
         DstPort = std::stoi(argv[2]);
         std::cout << "\n对方UUID为:" << uuid << ";端口为：" << DstPort << std::endl;
         SrcPort = DstPort;
+        if (SrcPort == 3389)SrcPort = 3388;
         const char* serverIP = "127.0.0.1";
         while (true)
         {
@@ -156,6 +157,7 @@ int main(int argc,char* argv[])
             std::cout << "请输入对方端口：" << std::endl;
             std::cin >> DstPort;
             SrcPort = DstPort;
+            if (SrcPort == 3389)SrcPort = 3388;
             while (true)
             {
                 if (checkMCServerOnline(serverIP, SrcPort))

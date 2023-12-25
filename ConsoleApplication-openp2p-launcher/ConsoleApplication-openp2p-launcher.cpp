@@ -56,7 +56,7 @@ int main(int argc,char* argv[])
     if (isFileExists_ifstream(log))
     {
         remove("bin\\bin\\log");
-        //system("del bin\\bin\\log /q");
+        //system("del bin\\bin\\log /q")
     }
     if (isFileExists_ifstream(log0))
     {

@@ -9,3 +9,5 @@
 - [使用文档](https://gld.rth1.link/md/opl)
 - 问题反馈qq群：`873968900`
 - 前往B站关注我[传送门](https://space.bilibili.com/496960407)
+---
+开源协议采用MIT协议，但禁止商用

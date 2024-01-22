@@ -27,8 +27,8 @@
 #include <thread>
 #include "resource1.h"
 #include "releaseHelper.h"
-int SrcPort,openn=0,udpopen;
-std::string version = "0.5.6.1";
+int SrcPort,openn=0,udpopen,udp=0;
+std::string version = "0.5.6.2";
 //声明函数.
 void Clink(std::string uuid, int DstPort, char* paths);
 bool isFileExists_ifstream(std::string & name),checkMCServerOnline(const char* serverIP, int serverPort);
@@ -95,14 +95,16 @@ int main(int argc,char* argv[])
     std::cout << "*初始化完毕*\n***************OPL-"<< version <<" * *********************\n                使用说明\n    1.根据提示输入参数\n    2.注意你的uuid是：" << myuuid << "\n    4.被连接需要把你的uuid和端口发给对方\n    3.程序文档：https://gld.rth1.link/md/opl\n    4.本程序基于openp2p\n*********************************************\n" << std::endl;
     SetConsoleTitle("openp2p launcher -by Guailoudou");
     //system("title openp2p-launcher-by-Guailoudou"); 
-    std::cout << "被连接：输入0||新建连接：输入1，历史记录查看快捷方式" << std::endl;
-    if (argc == 3) {
+    std::cout << "被连接：输入0||新建连接：tcp输入1(mc,泰拉瑞亚类)，udp输入2（幻兽帕鲁类），历史记录查看快捷方式" << std::endl;
+    if (argc >= 3) {
         std::cout << "cmd模式";
         uuid = argv[1];
         DstPort = std::stoi(argv[2]);
-        std::cout << "\n对方UUID为:" << uuid << ";端口为：" << DstPort << std::endl;
+        if(argc == 4)udp = std::stoi(argv[3]);
+        std::cout << "\n对方UUID为:" << uuid << ";端口为：" << DstPort << "模式为：";
+        udp ? std::cout << "UDP" << std::endl:std::cout << "TCP" << std::endl;
         SrcPort = DstPort;
-        if (SrcPort == 3389)SrcPort = 3388;
+        SrcPort--;
         const char* serverIP = "127.0.0.1";
         while (true)
         {
@@ -115,7 +117,7 @@ int main(int argc,char* argv[])
                 break;
             }
         }
-        std::cout << "程序2s后开始运行,请直接打开游戏等待提示连接成功后从局域网进入";
+        std::cout << "程序2s后开始运行,请直接打开游戏等待提示连接成功后从局域网（仅支持MC）进入";
         Sleep(2000);
         play1(DstPort, uuid, myuuid);
         while (true)
@@ -144,8 +146,12 @@ int main(int argc,char* argv[])
             t1.join();
             mobapp();
         }
-        else if (type == 1)
+        else if (type >= 1)
         {
+            if (type == 2) {
+                std::cout << "UDP模式" << std::endl;
+                udp = 1;
+            }
             const char* serverIP = "127.0.0.1";
             std::cout << "开始运行之后直接打开游戏从局域网进入\n请输入对方uuid：" << std::endl;
             std::cin >> uuid;
@@ -157,7 +163,7 @@ int main(int argc,char* argv[])
             std::cout << "请输入对方端口：" << std::endl;
             std::cin >> DstPort;
             SrcPort = DstPort;
-            if (SrcPort == 3389)SrcPort = 3388;
+            SrcPort--;
             while (true)
             {
                 if (checkMCServerOnline(serverIP, SrcPort))
@@ -169,7 +175,7 @@ int main(int argc,char* argv[])
                     break;
                 }
             }
-            std::cout << "程序2s后开始运行,请直接打开游戏等待提示连接成功后从局域网进入";
+            std::cout << "程序2s后开始运行,请直接打开游戏等待提示连接成功后从局域网（仅支持MC）进入";
             Sleep(2000);
             std::stringstream ss, ss2;
             Clink(uuid,DstPort, argv[0]);
@@ -223,7 +229,7 @@ void heart() {
     {
         if (checkMCServerOnline(serverIP, SrcPort)) {
             if (openn == 0) {
-                std::cout << "连接成功,请直接打开游戏从局域网进入,如果5s内没有出现在局域网，请手动添加服务器127.0.0.1:"<< SrcPort << std::endl;
+                std::cout << "连接成功,请直接打开游戏从局域网进入,如果5s内没有出现在局域网（仅MC支持），请手动添加服务器127.0.0.1:"<< SrcPort << std::endl;
                 openn = 1;
                 udpopen = 1;
             }
@@ -253,8 +259,10 @@ wchar_t* char2wchar(const char* cchar)
 }
 void Clink(std::string uuid, int DstPort,char* paths) {
     std::stringstream ss,ss2;
-    ss << uuid << " " << DstPort;
-    ss2 << uuid << " " << DstPort << ".lnk";
+    if(udp==1)ss << uuid << " " << DstPort<<" "<<1;
+    else ss << uuid << " " << DstPort;
+    if (udp == 1)ss2 << "udp" << " " << uuid << " " << DstPort << ".lnk";
+    else ss2 << "tcp"<< " " << uuid << " " << DstPort << ".lnk";
     std::string str = ss.str();
     std::string str2 = ss2.str();
     const char* Path = str.data();
@@ -320,9 +328,10 @@ void play1(int DstPort, std::string uuid, std::string myuuid)
     j["network"]["UDPPort1"] = 27182;
     j["network"]["UDPPort2"] = 27183;
     j["network"]["TCPPort"] = 50448;
-
+    
     j["apps"][0]["AppName"] = "***";
-    j["apps"][0]["Protocol"] = "tcp";
+    if (udp == 1)j["apps"][0]["Protocol"] = "udp";
+    else j["apps"][0]["Protocol"] = "tcp";
     j["apps"][0]["SrcPort"] = SrcPort;//本地端口
     j["apps"][0]["PeerNode"] = uuid;//远程设备名
     j["apps"][0]["DstPort"] = DstPort;//远程端口

@@ -28,7 +28,7 @@
 #include "resource1.h"
 #include "releaseHelper.h"
 int SrcPort,openn=0,udpopen,udp=0;
-std::string version = "0.5.6.2";
+std::string version = "0.5.6.3";
 //声明函数.
 void Clink(std::string uuid, int DstPort, char* paths);
 bool isFileExists_ifstream(std::string & name),checkMCServerOnline(const char* serverIP, int serverPort);
@@ -454,33 +454,74 @@ bool checkMCServerOnline(const char* serverIP, int serverPort) {
         return false;
     }
 
-    SOCKET sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    // 检查是否需要检测UDP
+    bool isUdp = false; // You can set this to true if you want to detect UDP
+    if (udp == 1)isUdp = true;
+    SOCKET sock = isUdp ? socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP) : socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (sock == INVALID_SOCKET) {
         std::cerr << "Socket creation error: " << WSAGetLastError() << std::endl;
         WSACleanup();
         return false;
     }
 
+    // 创建服务器地址结构体
     sockaddr_in serverAddress;
     serverAddress.sin_family = AF_INET;
     serverAddress.sin_port = htons(serverPort);
 
     // 使用 inet_pton 函数将 IP 地址从字符串转换为二进制格式
-    if (inet_pton(AF_INET, serverIP, &serverAddress.sin_addr) <= 0) {
+    if (inet_pton(AF_INET, serverIP, &(serverAddress.sin_addr.s_addr)) <= 0) {
         std::cerr << "Invalid address" << std::endl;
         closesocket(sock);
         WSACleanup();
         return false;
     }
 
-    if (connect(sock, (struct sockaddr*)&serverAddress, sizeof(serverAddress)) != 0) {
-        //std::cerr << "连接中... ";
-        closesocket(sock);
-        WSACleanup();
-        return false;
+    // 连接到服务器
+    if (isUdp) {
+        // 发送一个数据包，等待服务器响应
+        char sendBuf[2] = { 0xFE, 0x01 }; // Minecraft服务器的握手数据包
+        char recvBuf[256]; // 用于接收服务器的响应
+        int recvLen; // 接收到的数据长度
+        if (sendto(sock, sendBuf, 2, 0, (struct sockaddr*)&serverAddress, sizeof(serverAddress)) != 2) {
+            std::cerr << "Send error: " << WSAGetLastError() << std::endl;
+            closesocket(sock);
+            WSACleanup();
+            return false;
+        }
+        // 设置一个超时时间，比如1秒
+        struct timeval tv;
+        tv.tv_sec = 1;
+        tv.tv_usec = 0;
+        setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof(tv));
+        // 接收服务器的响应
+        recvLen = recvfrom(sock, recvBuf, 256, 0, NULL, NULL);
+        if (recvLen <= 0) {
+            if (WSAGetLastError() == 10060)return true;
+            //std::cerr << "Receive error: " << WSAGetLastError() << std::endl;
+            closesocket(sock);
+            WSACleanup();
+            return false;
+        }
+        // 如果接收到了服务器的响应，说明服务器在线
+        return true;
+    }
+    else {
+        // 使用TCP协议连接服务器
+        std::cerr << "连接中... ";
+        if (connect(sock, (struct sockaddr*)&serverAddress, sizeof(serverAddress)) != 0) {
+            //std::cerr << "Connect error: " << WSAGetLastError() << std::endl;
+            closesocket(sock);
+            WSACleanup();
+            return false;
+        }
+        // 如果连接成功，说明服务器在线
+        return true;
     }
 
+    // 关闭套接字
     closesocket(sock);
     WSACleanup();
     return true;
 }
+

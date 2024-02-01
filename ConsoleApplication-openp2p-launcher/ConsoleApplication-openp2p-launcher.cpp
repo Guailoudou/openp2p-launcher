@@ -508,7 +508,7 @@ bool checkMCServerOnline(const char* serverIP, int serverPort) {
     }
     else {
         // 使用TCP协议连接服务器
-        std::cerr << "连接中... ";
+        //std::cerr << "连接中... ";
         if (connect(sock, (struct sockaddr*)&serverAddress, sizeof(serverAddress)) != 0) {
             //std::cerr << "Connect error: " << WSAGetLastError() << std::endl;
             closesocket(sock);

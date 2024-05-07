@@ -1,3 +1,5 @@
+UI版本已上线，拥有更多功能，提示更加清晰，更加方便
+详见：https://github.com/Guailoudou/OPL-WpfApp
 # openp2p-launcher0.5
 - 可以快捷建立p2p连接
 - ~~MC专用~~ 现在支持udp隧道了
